@@ -37,6 +37,8 @@
 #define DISP_MEM 5
 #define STEP 3
 #define LOAD 1
+#define SAVE 2
+#define EDIT 6
 
 // etc.
 #define SEXT6_SIGN_EXTEND 0xFFC0

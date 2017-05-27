@@ -8,6 +8,10 @@ int controller (CPU_p, int);
 
 int displayScreen (CPU_p, int);
 
+void save();
+
+void edit(CPU_p cpu);
+
 int dialog (CPU_p cpu);
 
 char getch ();
@@ -125,7 +129,9 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem) {
-  printf("\n\n\n");
+	for(int i = 0; i < 100; i++) {
+		printf("\n");
+	}
 	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	printf("\t\tRegisters \t\t    Memory\n");
 	int i = START_MEM + mem;
@@ -148,7 +154,7 @@ int displayScreen(CPU_p cpu, int mem) {
 	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
 	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
 	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-	printf("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
+	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
 	return 0;
 }
 
@@ -206,6 +212,12 @@ int dialog(CPU_p cpu) {
 				case RUN:
 					controller(cpu, 1);
 					displayScreen(cpu, 0);
+					break;
+				case EDIT:
+					edit(cpu);
+					break;
+				case SAVE:
+					save();
 					break;
 				case EXIT:
 					printf("Simulation Terminated.");
@@ -434,6 +446,77 @@ void cpuInit(CPU_p cpu) {
 	cpu->Z = 0;
 	cpu->P = 0;
 
+}
+
+void edit(CPU_p cpu) {
+	unsigned short newValue; 
+	char newMemoryValue[4];
+	unsigned int placeInMemory;
+	char * charPtr;
+	printf("What memory address would you like to edit: x");
+	scanf("%04x", &placeInMemory);
+	printf("The contents of location x%04X is  x%04X\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
+	printf("What would you like the new value in location x%04X to be: ", placeInMemory);
+	scanf("%s", &newMemoryValue);
+	printf("%s\n", newMemoryValue);
+	newValue = (short)strtol(newMemoryValue, &charPtr, 16);
+	memory[placeInMemory - START_MEM + 1] = newValue;
+	displayScreen(cpu, placeInMemory - START_MEM - 7);
+}
+
+//returns 1 if true 0 if false
+int checkIfFileExists(char* fileToCheckIfExists) {
+	FILE* filePtr;
+	filePtr = fopen(fileToCheckIfExists, "r");
+	if(filePtr != NULL) {
+		fclose(filePtr);
+		return 1;
+	} else {
+		return 0;
+		fclose(filePtr);
+	}
+}
+
+//need to #define TRAP25 61477;
+void save() {
+	FILE * filePtr;
+	char fileName[20];
+	char response;
+	printf("Enter a file name to save to: ");
+	scanf("%s", &fileName);
+	int TRAP25 = 61477;
+	unsigned int memoryStart, memoryEnd; 
+	//the file exists so promt the user to see if they 
+	//are ok with overwritting the preexisting file right here
+	//include if/else statement to check user decision for overwriting
+	if(checkIfFileExists(fileName)) {
+		printf("This file already exists would you like to overwrite(y/n): ");
+		scanf(" %c", &response);
+		if(response == 'y') {
+			printf("Enter the beginning of the memory to save from : x");
+			scanf("%4x", &memoryStart);
+			printf("Enter the end of the memory to save to : x");
+			scanf("%4x", &memoryEnd);
+			filePtr = fopen(fileName, "w");
+			for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+				printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+				fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+			}
+			fclose(filePtr);
+		}
+	//the file doesn't exist so create the new file and write to it
+	} else {
+		FILE * filePtr;
+		filePtr = fopen(fileName, "w");
+		printf("Enter the beginning of the memory to save from : x");
+		scanf("%4x", &memoryStart);
+		printf("Enter the end of the memory to save to : x");
+		scanf("%4x", &memoryEnd);
+		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+		}
+		fclose(filePtr);
+	}
 }
 
 
